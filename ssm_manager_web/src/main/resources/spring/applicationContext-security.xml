@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+			 xmlns:beans="http://www.springframework.org/schema/beans" 
+			 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			 xsi:schemaLocation="http://www.springframework.org/schema/beans 
+			                     http://www.springframework.org/schema/beans/spring-beans.xsd
+								 http://www.springframework.org/schema/security 
+								 http://www.springframework.org/schema/security/spring-security.xsd">
+
+    <!-- 设置页面不登录也可以访问 -->
+    <http pattern="/*.html" security="none"/>
+    <http pattern="/*.jsp" security="none"/>
+    <http pattern="/css/**" security="none"/>
+    <http pattern="/img/**" security="none"/>
+    <http pattern="/js/**" security="none"/>
+    <http pattern="/layui/**" security="none"/>
+    <http pattern="/download/**" security="none"/>
+    <http pattern="/*.txt" security="none"/>
+    <http pattern="/adminUser/**" security="none"/>
+
+    <!-- 配置页面的拦截规则 -->
+    <!-- use-expressions : 是否启动SPEL表达式 
+                            如果不设置这个属性为false, 则下面的access必须写成 hasRole('ROLE_USER')
+    -->
+    <http use-expressions="false">
+        <!-- 当前用户必须有ROLE_USER的角色, 才可以访问根目录及子目录的资源 -->
+        <!-- /* 代表当前目录下的所有资源, 不包括子目录, /** 代表当前目录下的所有资源, 包括子目录 -->
+        <intercept-url pattern="/**" access="ROLE_ADMIN"/>
+       
+
+        <!-- 开启表单登录功能 -->
+        <!-- always-use-default-target: 设置总是跳转到/index.html, 如果不设置, 则跳转到之前访问的页面,前端页面可以不设置 -->
+
+        <!--authentication-failure-url="/adminLogin.jsp?error=true"-->
+        <form-login login-page="/adminUser/jumpToLogin"
+            default-target-url="/manager/framework/index.jsp"
+            authentication-failure-url="/adminUser/jumpToLogin?error=true"
+            always-use-default-target="true"/>
+        <!-- csrf: 跨站请求伪造, 如果不关闭, 则会报403 -->
+        <csrf disabled="true"/>
+        <headers>
+            <!-- spring security默认拦截iframe框架, 加上这个配置设置不拦截 -->
+            <frame-options policy="SAMEORIGIN"/>
+        </headers>
+        <!-- logout: 自动产生一个/logout的地址, 访问即可退出当前用户 -->
+        <logout logout-success-url="/adminUser/jumpToLogin"/>
+
+        <access-denied-handler error-page="/403.jsp"/>
+    </http>
+
+    <!-- 认证管理器 -->
+    <authentication-manager>
+        <authentication-provider user-service-ref="userDetailsService">
+            <password-encoder ref="bcryptEncoder"/>
+        </authentication-provider>
+    </authentication-manager>
+    
+    <!--  -->
+    <beans:bean id="userDetailsService" class="ds.service.impl.UserDetailsServiceImpl">
+        <!-- 下面是set方法注入sellerService -->
+        <!-- <beans:property name="sellerService" ref="sellerService接口"></beans:property> -->
+    </beans:bean>
+    
+    <!--  -->
+    <beans:bean id="bcryptEncoder" class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder"/>
+
+    <!--错误信息提示-->
+    <!--<beans:bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+        <beans:property name="basenames" value="classpath:messages_zh_CN"/>
+    </beans:bean>-->
+</beans:beans>
